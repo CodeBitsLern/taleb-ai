@@ -178,6 +178,22 @@ body {
   }
 }
 
+.copyright-notice {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+.policy-notice {
+  padding: 10px 15px;
+  background: #fff3cd;
+  border-top: 1px solid #ffc107;
+  text-align: center;
+  color: #856404;
+  font-size: 12px;
+  z-index: 10;
+}
+
 @media (max-width: 600px) {
   .chat-container {
     max-width: 100%;
