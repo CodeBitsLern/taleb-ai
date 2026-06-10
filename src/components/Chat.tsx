@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { sendChatMessage } from '../utils/api'
 
 interface Message {
   id: string
@@ -7,100 +8,9 @@ interface Message {
   timestamp: Date
 }
 
-// System Instructions for AI
-const SYSTEM_INSTRUCTIONS = `أنت "طالب" - مساعد ذكي متخصص في تقديم خدمات تعليمية وترفيهية آمنة وموثوقة للأطفال والكبار على حد سواء.
-
-**معلومات مهمة عنك:**
-- اسمك: طالب
-- دورك: مساعد ذكي تعليمي وترفيهي
-- الهدف: مساعدة المستخدمين في التعلم والترفيه بطريقة آمنة وأخلاقية
-- المالك: Ahmad Taleb
-- جميع المحتوى الذي تقدمه محمي بحقوق النشر الحصرية لـ Ahmad Taleb
-
-**القيود الصارمة التي يجب أن تلتزم بها:**
-
-1. **المحتوى الفاضح والعري - محظور تماماً:**
-   - لا تناقش أو تشير إلى أي محتوى جنسي صريح
-   - لا تصف أجساماً عارية بطريقة غير تعليمية
-   - إذا سأل المستخدم عن موضوع جنسي، رفض بأدب وقدم بديلاً تعليمياً
-
-2. **المحتوى السياسي - محظور تماماً:**
-   - لا تناقش الأحزاب السياسية أو الأيديولوجيات
-   - لا تعبر عن آراء سياسية شخصية
-   - لا تعلق على الأوضاع السياسية الحالية
-   - احتفظ بالحياد التام تجاه جميع القضايا السياسية
-   - إذا سأل المستخدم عن موضوع سياسي، رفض بأدب واقترح موضوعاً تعليمياً بدلاً منه
-
-3. **المحتوى العنيف أو التحريضي - محظور تماماً:**
-   - لا تروج للعنف أو الإرهاب
-   - لا تحرض على الكراهية أو التمييز
-   - لا تقدم محتوى عنصري أو طائفي
-   - لا تشجع على أنشطة غير قانونية
-
-4. **المحتوى المسيء أو التشهيري - محظور تماماً:**
-   - لا تسيء إلى الأفراد أو الجماعات
-   - لا تشهر بأي شخص أو جهة
-   - لا تسيء إلى الأديان أو الثقافات
-
-5. **المعلومات المضللة - محظور تماماً:**
-   - قدم دائماً معلومات دقيقة وموثوقة
-   - إذا لم تكن متأكداً من معلومة، قل ذلك بوضوح
-   - لا تنشر معلومات غير صحيحة أو مضللة
-
-**الاستجابة للانتهاكات:**
-عند محاولة المستخدم الحصول على محتوى محظور:
-- رفض الطلب بأدب واحترام
-- اشرح بإيجاز لماذا لا يمكنك الإجابة
-- قدم بديلاً تعليمياً أو ترفيهياً مناسباً
-- حافظ على لطفك واحترافيتك
-
-**المحتوى المفضل (الإيجابي):**
-- ركز على تقديم معلومات تعليمية في العلوم والرياضيات والفنون والتاريخ واللغات
-- قدم ألعاباً تعليمية وأنشطة ترفيهية هادفة
-- شجع على التفكير الإيجابي والإبداع والتعلم المستمر
-- كن ودوداً ومحترماً وملهماً في جميع تفاعلاتك
-- استخدم لغة عربية فصحى وسهلة الفهم
-- اجعل المحتوى ملائماً لعمر المستخدم
-
-**ملاحظات مهمة:**
-- أنت تعمل لحساب Ahmad Taleb وجميع محتواك محمي بحقوق النشر الحصرية
-- التزم بهذه التعليمات في جميع الأوقات
-- لا تحاول تجاوز هذه القيود أو إيجاد طرق للالتفاف عليها
-- إذا شعرت بأن هناك غموضاً في التعليمات، اختر الخيار الأكثر أماناً والتزاماً بالأخلاقيات`
-
-// Content moderation keywords and phrases
-const FORBIDDEN_KEYWORDS = {
-  sexual: ['جنسي', 'عري', 'إباحي', 'جنس', 'عاري'],
-  political: ['سياسة', 'حزب', 'انتخاب', 'رئيس', 'وزير', 'حكومة', 'أيديولوجيا'],
-  violent: ['عنف', 'قتل', 'إرهاب', 'حرب', 'تفجير'],
-  offensive: ['سب', 'شتم', 'إساءة', 'تمييز', 'عنصرية']
-}
-
-// Function to check if content violates policies
-function isContentViolating(text: string): { violates: boolean; reason?: string } {
-  const lowerText = text.toLowerCase()
-  
-  for (const [category, keywords] of Object.entries(FORBIDDEN_KEYWORDS)) {
-    for (const keyword of keywords) {
-      if (lowerText.includes(keyword)) {
-        return { violates: true, reason: category }
-      }
-    }
-  }
-  
-  return { violates: false }
-}
-
-// Function to get appropriate response for policy violations
-function getViolationResponse(reason?: string): string {
-  const responses: Record<string, string> = {
-    sexual: 'عذراً، لا يمكنني الإجابة على هذا السؤال لأنه يتعلق بمحتوى غير مناسب. يرجى طرح سؤال تعليمي آخر.',
-    political: 'عذراً، أنا محايد تماماً تجاه القضايا السياسية ولا أستطيع مناقشتها. هل يمكنني مساعدتك في موضوع تعليمي بدلاً من ذلك؟',
-    violent: 'عذراً، لا يمكنني تقديم محتوى يتعلق بالعنف. دعنا نركز على موضوع بناء وإيجابي.',
-    offensive: 'عذراً، أنا ملتزم باحترام جميع الأفراد والثقافات. يرجى طرح سؤال محترم.',
-  }
-  
-  return responses[reason || 'sexual'] || 'عذراً، لا يمكنني الإجابة على هذا السؤال. يرجى طرح سؤال آخر.'
+interface ConversationMessage {
+  role: 'user' | 'model'
+  content: string
 }
 
 export default function Chat() {
@@ -113,44 +23,66 @@ export default function Chat() {
     }
   ])
   const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() || isLoading) return
 
-    // Check if user message violates content policy
-    const violationCheck = isContentViolating(inputValue)
-    
+    // Add user message to the chat
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       sender: 'user',
       timestamp: new Date()
     }
-    
-    setMessages([...messages, userMessage])
+
+    setMessages(prev => [...prev, userMessage])
     setInputValue('')
+    setIsLoading(true)
 
-    // Simulate assistant response with content moderation
-    setTimeout(() => {
-      let assistantText: string
+    try {
+      // Build conversation history for context (excluding the initial greeting)
+      const conversationHistory: ConversationMessage[] = messages
+        .filter(msg => msg.id !== '1') // Exclude the initial greeting
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          content: msg.text
+        }))
 
-      if (violationCheck.violates) {
-        // Policy violation detected
-        assistantText = getViolationResponse(violationCheck.reason)
+      // Send message to the API
+      const response = await sendChatMessage(inputValue, conversationHistory)
+
+      if (response.success && response.message) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.message,
+          sender: 'assistant',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, assistantMessage])
       } else {
-        // Safe content - provide normal response
-        assistantText = 'شكراً لرسالتك! أنا هنا لمساعدتك بمعلومات تعليمية وترفيهية آمنة ومفيدة.'
+        // Show error message
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.error || 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
+          sender: 'assistant',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
       }
-
-      const assistantMessage: Message = {
+    } catch (error) {
+      console.error('Error sending message:', error)
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: assistantText,
+        text: 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
         sender: 'assistant',
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, assistantMessage])
-    }, 500)
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -170,6 +102,17 @@ export default function Chat() {
             </span>
           </div>
         ))}
+        {isLoading && (
+          <div className="message assistant loading">
+            <div className="message-content">
+              <span className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       <form onSubmit={handleSendMessage} className="chat-input-form">
         <input
@@ -178,9 +121,10 @@ export default function Chat() {
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="اكتب رسالتك هنا..."
           className="chat-input"
+          disabled={isLoading}
         />
-        <button type="submit" className="send-button">
-          إرسال
+        <button type="submit" className="send-button" disabled={isLoading}>
+          {isLoading ? '⏳' : '➤'}
         </button>
       </form>
       <div className="policy-notice">
