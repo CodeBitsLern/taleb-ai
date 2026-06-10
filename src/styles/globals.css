@@ -69,6 +69,31 @@ body {
   font-weight: 600;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.3s;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;

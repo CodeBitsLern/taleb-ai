@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { sendChatMessage } from '../utils/api'
 
 interface Message {
@@ -13,6 +13,8 @@ interface ConversationMessage {
   content: string
 }
 
+const STORAGE_KEY = 'taleb_chat_history'
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -24,12 +26,55 @@ export default function Chat() {
   ])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem(STORAGE_KEY)
+    if (savedHistory) {
+      try {
+        const parsedHistory = JSON.parse(savedHistory)
+        // Convert string timestamps back to Date objects
+        const hydratedHistory = parsedHistory.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }))
+        setMessages(hydratedHistory)
+      } catch (e) {
+        console.error('Failed to parse chat history', e)
+      }
+    }
+  }, [])
+
+  // Save history to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 1 || (messages.length === 1 && messages[0].sender === 'assistant' && messages[0].id !== '1')) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+    }
+    scrollToBottom()
+  }, [messages])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handleClearHistory = () => {
+    if (window.confirm('هل أنت متأكد من رغبتك في مسح سجل المحادثة؟')) {
+      const initialMessage: Message = {
+        id: '1',
+        text: 'مرحباً! أنا طالب، مساعدك الذكي. كيف يمكنني مساعدتك اليوم؟',
+        sender: 'assistant',
+        timestamp: new Date()
+      }
+      setMessages([initialMessage])
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim() || isLoading) return
 
-    // Add user message to the chat
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
@@ -42,15 +87,14 @@ export default function Chat() {
     setIsLoading(true)
 
     try {
-      // Build conversation history for context (excluding the initial greeting)
+      // Build conversation history for context
       const conversationHistory: ConversationMessage[] = messages
-        .filter(msg => msg.id !== '1') // Exclude the initial greeting
+        .filter(msg => msg.id !== '1')
         .map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           content: msg.text
         }))
 
-      // Send message to the API
       const response = await sendChatMessage(inputValue, conversationHistory)
 
       if (response.success && response.message) {
@@ -62,7 +106,6 @@ export default function Chat() {
         }
         setMessages(prev => [...prev, assistantMessage])
       } else {
-        // Show error message
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: response.error || 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
@@ -88,7 +131,12 @@ export default function Chat() {
   return (
     <div className="chat-container">
       <div className="chat-header">
-        <h1>طالب - المساعد الذكي</h1>
+        <div className="header-top">
+          <h1>طالب - المساعد الذكي</h1>
+          <button onClick={handleClearHistory} className="clear-btn" title="مسح المحادثة">
+            🗑️
+          </button>
+        </div>
         <p className="copyright-notice">© 2026 Ahmad Taleb. جميع الحقوق محفوظة.</p>
       </div>
       <div className="chat-messages">
@@ -113,6 +161,7 @@ export default function Chat() {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
       <form onSubmit={handleSendMessage} className="chat-input-form">
         <input
