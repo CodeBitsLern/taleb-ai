@@ -5,6 +5,8 @@ interface ChatMessage {
 
 interface ChatRequest {
   message: string;
+  persona?: string;
+  image?: { data: string; mimeType: string };
   conversationHistory?: ChatMessage[];
 }
 
@@ -14,47 +16,30 @@ interface ChatResponse {
   error?: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export async function sendChatMessage(
   userMessage: string,
-  conversationHistory: ChatMessage[] = []
+  conversationHistory: ChatMessage[] = [],
+  persona: string = "default",
+  image?: { data: string; mimeType: string }
 ): Promise<ChatResponse> {
   try {
     const request: ChatRequest = {
       message: userMessage,
-      conversationHistory: conversationHistory.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
+      persona,
+      image,
+      conversationHistory
     };
 
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.error || "Failed to get response from AI",
-      };
-    }
-
-    const data = (await response.json()) as ChatResponse;
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error("Chat API error:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to connect to chat service",
-    };
+    return { success: false, error: "Failed to connect to chat service" };
   }
 }
