@@ -34,11 +34,16 @@ export async function sendChatMessage(
       conversationHistory
     };
 
-    const url = API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat';
+    // In production on Vercel, we should use the relative path /api/chat
+    // In development, we use VITE_API_URL if provided, otherwise fallback to /api/chat
+    const url = (import.meta.env.PROD) ? '/api/chat' : (API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat');
 
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
       body: JSON.stringify(request),
     });
 
