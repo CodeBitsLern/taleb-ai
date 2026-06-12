@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY || "");
+const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(apiKey || "");
 
 const PERSONAS = {
   teacher: "أنت 'طالب المعلم' - مساعد تعليمي صبور وذكي. هدفك هو شرح المفاهيم المعقدة ببساطة، وتشجيع المستخدم على التعلم، وتقديم أمثلة توضيحية. استخدم لغة فصحى مبسطة.",
@@ -18,8 +19,8 @@ interface ChatRequest {
 
 export async function handleChat(request: ChatRequest) {
   try {
-    if (!process.env.VITE_GEMINI_API_KEY) {
-      return { success: false, error: "API key not configured" };
+    if (!apiKey) {
+      return { success: false, error: "API key not configured (GEMINI_API_KEY is missing)" };
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });

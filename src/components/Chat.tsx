@@ -117,8 +117,15 @@ export default function Chat() {
         const assistantMsg: Message = { id: (Date.now() + 1).toString(), text: response.message, sender: 'assistant', timestamp: new Date() }
         setMessages(prev => [...prev, assistantMsg])
         speak(response.message)
+      } else {
+        const errorMsg: Message = { id: (Date.now() + 1).toString(), text: `خطأ: ${response.error || 'حدث خطأ غير متوقع'}`, sender: 'assistant', timestamp: new Date() }
+        setMessages(prev => [...prev, errorMsg])
       }
-    } catch (e) { console.error(e) }
+    } catch (e) { 
+      console.error(e)
+      const errorMsg: Message = { id: (Date.now() + 1).toString(), text: 'عذراً، تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو المحاولة لاحقاً.', sender: 'assistant', timestamp: new Date() }
+      setMessages(prev => [...prev, errorMsg])
+    }
     finally { setIsLoading(false) }
   }
 
