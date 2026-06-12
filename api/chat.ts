@@ -23,7 +23,7 @@ export async function handleChat(request: ChatRequest) {
       return { success: false, error: "API key not configured (GEMINI_API_KEY is missing)" };
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const personaPrompt = PERSONAS[request.persona || "default"];
     
     const contents: any[] = [
