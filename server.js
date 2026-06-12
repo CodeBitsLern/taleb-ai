@@ -86,7 +86,7 @@ app.post('/api/chat', async (req, res) => {
       return res.status(500).json({ error: 'API key not configured (GEMINI_API_KEY is missing)' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const chatContent = [
       {
