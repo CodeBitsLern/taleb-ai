@@ -16,6 +16,8 @@ interface ChatResponse {
   error?: string;
 }
 
+// Use the relative path for API calls to ensure it works on the same domain (Vercel)
+// Only use VITE_API_URL if it's explicitly set and not empty
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export async function sendChatMessage(
@@ -32,14 +34,28 @@ export async function sendChatMessage(
       conversationHistory
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    const url = API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat';
+
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(request),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        success: false, 
+        error: errorData.error || `HTTP Error ${response.status}: ${response.statusText}` 
+      };
+    }
+
     return await response.json();
   } catch (error) {
-    return { success: false, error: "Failed to connect to chat service" };
+    console.error("Chat API Error:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to connect to chat service" 
+    };
   }
 }
