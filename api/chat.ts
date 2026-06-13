@@ -1,6 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Use stable v1 API version if possible, or ensure correct model naming
 const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+
+// Force use of a stable configuration
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
 const PERSONAS = {
@@ -17,63 +20,58 @@ interface ChatRequest {
   conversationHistory?: Array<{ role: string; content: string }>;
 }
 
-// Try multiple models in case one fails
-const MODEL_NAMES = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
-
 export async function handleChat(request: ChatRequest) {
   if (!apiKey) {
     return { success: false, error: "API key not configured (GEMINI_API_KEY is missing)" };
   }
 
-  let lastError = null;
+  try {
+    // Using the most stable model name for v1/v1beta
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      apiVersion: "v1" // Explicitly use stable v1
+    });
 
-  for (const modelName of MODEL_NAMES) {
-    try {
-      console.log(`Trying model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const personaPrompt = PERSONAS[request.persona || "default"];
-      
-      const contents: any[] = [
-        { role: "user", parts: [{ text: personaPrompt }] },
-        { role: "model", parts: [{ text: "فهمت دوري. أنا طالب، مساعدك الذكي، جاهز لمساعدتك بكل دقة وأمانة." }] }
-      ];
+    const personaPrompt = PERSONAS[request.persona || "default"];
+    
+    const contents: any[] = [
+      { role: "user", parts: [{ text: personaPrompt }] },
+      { role: "model", parts: [{ text: "فهمت دوري. أنا طالب، مساعدك الذكي، جاهز لمساعدتك بكل دقة وأمانة." }] }
+    ];
 
-      if (request.conversationHistory && request.conversationHistory.length > 0) {
-        request.conversationHistory.forEach(msg => {
-          if (msg.content && msg.content.trim() !== "") {
-            contents.push({
-              role: msg.role === "user" ? "user" : "model",
-              parts: [{ text: msg.content }]
-            });
-          }
-        });
-      }
-
-      const currentParts: any[] = [];
-      if (request.image && request.image.data) {
-        currentParts.push({
-          inlineData: { data: request.image.data, mimeType: request.image.mimeType }
-        });
-      }
-      currentParts.push({ text: request.message || (request.image ? "ماذا يوجد في هذه الصورة؟" : "مرحبا") });
-      contents.push({ role: "user", parts: currentParts });
-
-      const result = await model.generateContent({ contents });
-      const response = await result.response;
-      const text = response.text();
-      
-      if (text) return { success: true, message: text };
-    } catch (error) {
-      console.error(`Error with model ${modelName}:`, error);
-      lastError = error;
-      // Continue to next model
+    if (request.conversationHistory && request.conversationHistory.length > 0) {
+      request.conversationHistory.forEach(msg => {
+        if (msg.content && msg.content.trim() !== "") {
+          contents.push({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.content }]
+          });
+        }
+      });
     }
-  }
 
-  return { 
-    success: false, 
-    error: `(Final V3.0) All models failed. Last error: ${lastError instanceof Error ? lastError.message : "Unknown"}` 
-  };
+    const currentParts: any[] = [];
+    if (request.image && request.image.data) {
+      currentParts.push({
+        inlineData: { data: request.image.data, mimeType: request.image.mimeType }
+      });
+    }
+    currentParts.push({ text: request.message || "مرحبا" });
+    contents.push({ role: "user", parts: currentParts });
+
+    const result = await model.generateContent({ contents });
+    const response = await result.response;
+    const text = response.text();
+    
+    if (text) return { success: true, message: text };
+    throw new Error("Empty response");
+  } catch (error) {
+    console.error("Chat Error:", error);
+    return { 
+      success: false, 
+      error: `(V4.0 Stable) Error: ${error instanceof Error ? error.message : "Unknown"}` 
+    };
+  }
 }
 
 export default async function handler(req: any, res: any) {
