@@ -36,7 +36,7 @@ export async function sendChatMessage(
 
     // In production on Vercel, we should use the relative path /api/chat
     // In development, we use VITE_API_URL if provided, otherwise fallback to /api/chat
-    const url = (import.meta.env.PROD) ? '/api/chat' : (API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat');
+    const url = (import.meta.env.PROD) ? '/api/chat' : (API_BASE_URL ? `${API_BASE_URL}/api/chat` : 'http://localhost:3001/api/chat');
 
     const response = await fetch(url, {
       method: "POST",
