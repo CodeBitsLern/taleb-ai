@@ -83,7 +83,7 @@ export async function handleChat(request: ChatRequest) {
     console.error("Chat Error:", error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : "حدث خطأ أثناء معالجة طلبك" 
+      error: `(V2.0) ` + (error instanceof Error ? error.message : "حدث خطأ أثناء معالجة طلبك") 
     };
   }
 }
