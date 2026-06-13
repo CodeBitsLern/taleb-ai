@@ -47,7 +47,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // Use gemini-1.5-flash for consistency and better capabilities
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const contents = [
       {

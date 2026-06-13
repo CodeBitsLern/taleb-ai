@@ -24,7 +24,7 @@ export async function handleChat(request: ChatRequest) {
     }
 
     // Using gemini-pro for stability
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const personaPrompt = PERSONAS[request.persona || "default"];
     
     const contents: any[] = [
