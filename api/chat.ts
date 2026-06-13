@@ -24,7 +24,7 @@ export async function handleChat(request: ChatRequest) {
     }
 
     // Using gemini-1.5-flash for better performance and image support
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     const personaPrompt = PERSONAS[request.persona || "default"];
     
     const contents: any[] = [
